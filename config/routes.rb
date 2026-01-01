@@ -1,4 +1,12 @@
 Rails.application.routes.draw do
+  namespace :admin do
+    resources :blog_posts do
+      member do
+        post :publish
+        post :unpublish
+      end
+    end
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
   get "login" => "sessions#new", as: :login
   post "login" => "sessions#create"
@@ -20,4 +28,7 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   get "create_flash" => "pages#create_flash"
   root "pages#home"
+  get "about" => "pages#about"
+  get "blog" => "pages#blog"
+  get "blog/:id" => "pages#show_blog_post", as: :blog_post
 end

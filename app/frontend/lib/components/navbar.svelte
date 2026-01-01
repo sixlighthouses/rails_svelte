@@ -14,12 +14,13 @@
   }
 
   const links = [
-    { href: "#", label: "About" },
-    { href: "#", label: "Contact" },
-    { href: "#", label: "Blog" }
+    { href: "/about", label: "About" },
+    { href: "/blog", label: "Blog" },
+    { href: "#", label: "Contact" }
   ]
 
   const currentUser = $derived($page.props?.user)
+  const isAdmin = $derived(currentUser?.admin)
 </script>
 
 <nav>
@@ -49,6 +50,13 @@
               </div>
             </DropdownMenu.GroupHeading>
             <DropdownMenu.Separator />
+            {#if isAdmin}
+              <DropdownMenu.Item onclick={() => router.visit('/admin/blog_posts')}>
+                <List class="mr-2 size-4" />
+                <span>Admin Panel</span>
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator />
+            {/if}
             <DropdownMenu.Item onclick={handleLogout}>
               <SignOut class="mr-2 size-4" />
               <span>Log out</span>
