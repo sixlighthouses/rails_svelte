@@ -36,7 +36,11 @@
     formData.set('blog_post[content]', markdownContent);
     formData.set('blog_post[image_url]', imageUrl);
     
-    router.post('/admin/blog_posts/', formData);
+    router.post('/admin/blog_posts', formData, {
+      onSuccess: () => {
+        // Let Inertia handle the redirect automatically
+      }
+    });
   }
 
   function togglePreview() {

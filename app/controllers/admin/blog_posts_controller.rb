@@ -25,8 +25,10 @@ class Admin::BlogPostsController < ApplicationController
     @blog_post.author = Current.user.email_address.split("@").first.capitalize
 
     if @blog_post.save
-      redirect_to admin_blog_posts_path, notice: "Blog post was successfully created."
+      flash[:notice] = "Blog post was successfully created."
+      inertia_location admin_blog_posts_path
     else
+      Rails.logger.info "Failed"
       render inertia: "admin/blog_posts/New", status: :unprocessable_entity
     end
   end
