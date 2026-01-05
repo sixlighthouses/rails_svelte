@@ -45,7 +45,8 @@ class Admin::BlogPostsController < ApplicationController
     Rails.logger.info "blog_post_params result: #{blog_post_params.inspect}"
 
     if @blog_post.update(blog_post_params)
-      redirect_to admin_blog_posts_path, notice: "Blog post was successfully updated."
+      flash[:notice] = "Blog post was successfully updated"
+      inertia_location admin_blog_posts_path
     else
       render inertia: "admin/blog_posts/Edit", status: :unprocessable_entity
     end
