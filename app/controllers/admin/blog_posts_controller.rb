@@ -11,7 +11,7 @@ class Admin::BlogPostsController < ApplicationController
   end
 
   def new
-    @blog_post = BlogPost.new
+  @blog_post = BlogPost.new
     render inertia: "admin/blog_posts/New"
   end
 
@@ -60,6 +60,7 @@ class Admin::BlogPostsController < ApplicationController
   def publish
     @blog_post.publish!
     redirect_to admin_blog_posts_path, notice: "Blog post was successfully published."
+    require_admin
   end
 
   def unpublish
