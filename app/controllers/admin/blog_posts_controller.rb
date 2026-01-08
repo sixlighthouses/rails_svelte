@@ -1,7 +1,7 @@
 class Admin::BlogPostsController < ApplicationController
   before_action :require_admin
   before_action :set_blog_post, only: [ :edit, :update, :destroy, :publish, :unpublish ]
-
+before_action
   def index
     @blog_posts = BlogPost.includes(:user).order(created_at: :desc)
     render inertia: "admin/blog_posts/Index", props: {
