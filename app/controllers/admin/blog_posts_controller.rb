@@ -24,6 +24,12 @@ class Admin::BlogPostsController < ApplicationController
     @blog_post.author = Current.user.email_address.split("@").first.capitalize
 
     if @blog_post.save
+      # Handle image upload via blob ID if provided
+      if params[:blob_id].present?
+        blob = ActiveStorage::Blob.find_signed(params[:blob_id])
+        @blog_post.image.attach(blob) if blob
+      end
+      handle_image_upload
       flash[:notice] = "Blog post was successfully created."
       redirect_to admin_blog_posts_path
     else
@@ -47,6 +53,7 @@ class Admin::BlogPostsController < ApplicationController
     Rails.logger.info "blog_post_params result: #{blog_post_params.inspect}"
 
     if @blog_post.update(blog_post_params)
+      handle_image_upload
       flash[:notice] = "Blog post was successfully updated"
       redirect_to admin_blog_posts_path
     else
@@ -70,6 +77,38 @@ class Admin::BlogPostsController < ApplicationController
   def unpublish
     @blog_post.unpublish!
     redirect_to admin_blog_posts_path, notice: "Blog post was successfully unpublished."
+  end
+
+def upload_image
+    if params[:image].present?
+      if params[:id].present?
+        # Member route - existing post
+        @blog_post = BlogPost.find(params[:id])
+        @blog_post.image.attach(params[:image])
+render json: {
+          image_url: rails_blob_url(@blog_post.image, host: "localhost:3100"),
+          success: true
+        }
+      else
+        # Collection route - create blob directly for new posts
+        blob = ActiveStorage::Blob.create_and_upload!(
+          io: params[:image],
+          filename: params[:image].original_filename,
+          content_type: params[:image].content_type
+        )
+
+render json: {
+          image_url: rails_blob_url(blob, host: "localhost:3100"),
+          blob_id: blob.signed_id,
+          success: true
+        }
+      end
+    else
+      render json: {
+        error: "No image provided",
+        success: false
+      }, status: :unprocessable_entity
+    end
   end
 
   private
@@ -96,6 +135,12 @@ class Admin::BlogPostsController < ApplicationController
       }
     else
       {}
+    end
+  end
+
+  def handle_image_upload
+    if params[:image].present?
+      @blog_post.image.attach(params[:image])
     end
   end
 end

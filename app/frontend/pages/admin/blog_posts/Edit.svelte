@@ -31,11 +31,25 @@
   let htmlContent = '';
 
   function handleSubmit(event) {
-    const formData = new FormData(event.target);
-    formData.set('blog_post[content]', markdownContent);
-    formData.set('blog_post[image_url]', imageUrl);
+    event.preventDefault();
     
-    router.put(`/admin/blog_posts/${blogPost.id}`, formData);
+    const formData = {
+      title: event.target.querySelector('input[name="blog_post[title]"]').value,
+      excerpt: event.target.querySelector('textarea[name="blog_post[excerpt]"]').value,
+      content: markdownContent,
+      author: event.target.querySelector('input[name="blog_post[author]"]').value
+    };
+
+    // Only include image_url if it's a URL (not an uploaded file)
+    if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+      formData.image_url = imageUrl;
+    }
+    
+    router.put(`/admin/blog_posts/${blogPost.id}`, formData, {
+      onError: (errors) => {
+        formErrors = errors;
+      }
+    });
   }
 
   function togglePreview() {
@@ -46,10 +60,37 @@
     useUrlInput = !useUrlInput;
   }
 
-  function handleImageUpload(event) {
+  async function handleImageUpload(event) {
     const file = event.target.files[0];
     if (file) {
-      formErrors.image_url = ['File upload demo - use URL option instead'];
+      isUploading = true;
+      formErrors.image_url = [];
+      
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const response = await fetch(`/admin/blog_posts/${blogPost.id}/upload_image`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            'Accept': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          imageUrl = result.image_url;
+        } else {
+          formErrors.image_url = [result.error || "Upload failed"];
+        }
+      } catch (error) {
+        formErrors.image_url = ["Upload failed: " + error.message];
+      } finally {
+        isUploading = false;
+      }
     }
   }
 </script>
@@ -193,9 +234,14 @@
                       id="image"
                       accept="image/*"
                       onchange={handleImageUpload}
-                      class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                      disabled={isUploading}
+                      class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm disabled:opacity-50"
                     />
-                    <p class="text-xs text-muted-foreground">File upload demo - use URL option instead</p>
+                    {#if isUploading}
+                      <p class="text-xs text-muted-foreground mt-1">
+                        Uploading...
+                      </p>
+                    {/if}
                   </div>
                 </div>
               {/if}
