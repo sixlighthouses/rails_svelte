@@ -1,7 +1,6 @@
 class Admin::BlogPostsController < ApplicationController
   before_action :require_admin
   before_action :set_blog_post, only: [ :edit, :update, :destroy, :publish, :unpublish ]
-before_action
   def index
     @blog_posts = BlogPost.includes(:user).order(created_at: :desc)
     render inertia: "admin/blog_posts/Index", props: {
@@ -26,10 +25,13 @@ before_action
 
     if @blog_post.save
       flash[:notice] = "Blog post was successfully created."
-      inertia_location admin_blog_posts_path
+      redirect_to admin_blog_posts_path
     else
-      Rails.logger.info "Failed"
-      render inertia: "admin/blog_posts/New", status: :unprocessable_entity
+      Rails.logger.info "Failed: #{@blog_post.errors.full_messages.join(', ')}"
+      render inertia: "admin/blog_posts/New", props: {
+        blogPost: @blog_post.as_json,
+        errors: @blog_post.errors.full_messages
+      }, status: :unprocessable_entity
     end
   end
 
@@ -46,9 +48,12 @@ before_action
 
     if @blog_post.update(blog_post_params)
       flash[:notice] = "Blog post was successfully updated"
-      inertia_location admin_blog_posts_path
+      redirect_to admin_blog_posts_path
     else
-      render inertia: "admin/blog_posts/Edit", status: :unprocessable_entity
+      render inertia: "admin/blog_posts/Edit", props: {
+        blogPost: @blog_post.as_json,
+        errors: @blog_post.errors.full_messages
+      }, status: :unprocessable_entity
     end
   end
 
@@ -60,7 +65,6 @@ before_action
   def publish
     @blog_post.publish!
     redirect_to admin_blog_posts_path, notice: "Blog post was successfully published."
-    require_admin
   end
 
   def unpublish
@@ -79,19 +83,19 @@ before_action
   end
 
   def blog_post_params
-    Rails.logger.info "=== BLOG POST CREATE DEBUG ==="
-
     # Handle both wrapped parameters from Rails forms and unwrapped parameters from Inertia/JSON
     if params[:blog_post].present?
       params.require(:blog_post).permit(:title, :content, :excerpt, :author, :image_url)
-    else params["blog_post.title"].present?
+    elsif params["title"].present?
       {
-        title: params["blog_post.title"],
-        content: params["blog_post.content"],
-        excerpt: params["blog_post.excerpt"],
-        author: params["blog_post.author"],
-        image_url: params["blog_post.image_url"]
+        title: params["title"],
+        content: params["content"],
+        excerpt: params["excerpt"],
+        author: params["author"],
+        image_url: params["image_url"]
       }
+    else
+      {}
     end
   end
 end

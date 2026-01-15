@@ -38,14 +38,23 @@
   let htmlContent = "";
 
   function handleSubmit(event) {
-    const formData = new FormData(event.target);
-    formData.set("blog_post[content]", markdownContent);
-    formData.set("blog_post[image_url]", imageUrl);
+    event.preventDefault();
+    
+    const formData = {
+      title: event.target.querySelector('input[name="blog_post[title]"]').value,
+      excerpt: event.target.querySelector('textarea[name="blog_post[excerpt]"]').value,
+      content: markdownContent,
+      image_url: imageUrl,
+      author: event.target.querySelector('input[name="blog_post[author]"]').value
+    };
 
     router.post("/admin/blog_posts", formData, {
       onSuccess: () => {
         // Let Inertia handle the redirect automatically
       },
+      onError: (errors) => {
+        formErrors = errors;
+      }
     });
   }
 
